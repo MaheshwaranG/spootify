@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "s"
+    "url": "git+https://github.com/MaheshwaranG/spootify.git"
   },
   "keywords": [
     "songs",
