@@ -4,13 +4,7 @@ const HtmlWebpackPlugin = require("html-webpack-plugin");
 const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 const webpack = require("webpack");
 const dotenv= require("dotenv");
-
-const envParsed = dotenv.config().parsed;
-
-const env = Object.keys(envParsed).reduce((state, key) => {
-    state[`process.env.${key}`] = JSON.stringify(envParsed[key]);
-    return state;
-}, {})
+const fs = require('fs');
 
 let pagesList = { ...pagesConfig }; // to getpages information
 let pages = {}; // for webpack entry point
@@ -20,63 +14,71 @@ let baseURL = `http://${host}:${port}/`
 
 let htmlWebpackPluginsPages = []; // to chunk generation
 
-Object.keys(pagesList).forEach((key, index) => {
-    pages[`${key}`] = pagesList[`${key}`]["chunk"];
+module.exports = (env) => {
+    const envBasePath  = path.join(__dirname+"/.env");
+    const envFile = envBasePath+"."+env.ENVIRONMENT;
+    const envFilePath = fs.existsSync(envFile) ? envFile : envBasePath;
+    const envParsed = dotenv.config({path: envFilePath}).parsed;
+    const envVariables = Object.keys(envParsed).reduce((state, key) => {
+        state[`process.env.${key}`] = JSON.stringify(envParsed[key]);
+        return state;
+    }, {})
+    Object.keys(pagesList).forEach((key, index) => {
+        pages[`${key}`] = pagesList[`${key}`]["chunk"];
+    
+        let jsChunks = [`${key}`];
+    
+        let basicDetails = {};
+        if (pagesList[`${key}`]["title"]) {
+            basicDetails["title"] = pagesList[`${key}`]["title"];
+        }
+        if (pagesList[`${key}`]["favicon"]) {
+            basicDetails["favicon"] = pagesList[`${key}`]["favicon"];
+        }
+        if (pagesList[`${key}`]["meta"]) {
+            basicDetails["meta"] = { ...pagesList[`${key}`]["meta"] };
+        }
+        if (pagesList[`${key}`]["scriptLoading"]) {
+            basicDetails["scriptLoading"] = pagesList[`${key}`]["scriptLoading"];
+        }
+    
+        htmlWebpackPluginsPages.push(
+            new HtmlWebpackPlugin({
+                hash: true,
+                template: "template/index.html",
+                // filename: `${key}.[hash].html`,
+                filename: `${key}.html`,
+                base: env.baseURL,
+                chunks: [...jsChunks],
+                minify: {
+                    minifyJS: true,
+                    minifyCSS: true,
+                    removeComments: true,
+                    useShortDoctype: true,
+                    collapseWhitespace: true,
+                    collapseInlineTagWhitespace: true,
+                },
+                files: {
+                    css: [...pagesList[`${key}`]["css"]],
+                    js: [...pagesList[`${key}`]["js"]],
+                },
+                append: {
+                    head: `<script src="//cdn.polyfill.io/v3/polyfill.min.js"></script>`,
+                },
+                ...basicDetails,
+            })
+        );
+    });
 
-    let jsChunks = [`${key}`];
-
-    let basicDetails = {};
-    if (pagesList[`${key}`]["title"]) {
-        basicDetails["title"] = pagesList[`${key}`]["title"];
-    }
-    if (pagesList[`${key}`]["favicon"]) {
-        basicDetails["favicon"] = pagesList[`${key}`]["favicon"];
-    }
-    if (pagesList[`${key}`]["meta"]) {
-        basicDetails["meta"] = { ...pagesList[`${key}`]["meta"] };
-    }
-    if (pagesList[`${key}`]["scriptLoading"]) {
-        basicDetails["scriptLoading"] = pagesList[`${key}`]["scriptLoading"];
-    }
-
-    htmlWebpackPluginsPages.push(
-        new HtmlWebpackPlugin({
-            hash: true,
-            template: "template/index.html",
-            filename: `${key}.[hash].html`,
-            // filename: `${key}.html`,
-            base: baseURL,
-            chunks: [...jsChunks],
-            minify: {
-                minifyJS: true,
-                minifyCSS: true,
-                removeComments: true,
-                useShortDoctype: true,
-                collapseWhitespace: true,
-                collapseInlineTagWhitespace: true,
-            },
-            files: {
-                css: [...pagesList[`${key}`]["css"]],
-                js: [...pagesList[`${key}`]["js"]],
-            },
-            append: {
-                head: `<script src="//cdn.polyfill.io/v3/polyfill.min.js"></script>`,
-            },
-            ...basicDetails,
-        })
+    console.log(
+        "=======================Pages Details==============================="
     );
-});
+    console.log(JSON.stringify(pages));
+    console.log(
+        "-------------------------------------------------------------------"
+    );
 
-console.log(
-    "=======================Pages Details==============================="
-);
-console.log(JSON.stringify(pages));
-console.log(
-    "-------------------------------------------------------------------"
-);
-
-module.exports = {
-    mode: "production",
+    return {mode: "production",
     entry: {
         ...pages,
     },
@@ -133,5 +135,6 @@ module.exports = {
             },
         ],
     },
-    plugins: [new webpack.DefinePlugin(env), new CleanWebpackPlugin(), ...htmlWebpackPluginsPages],
-};
+    plugins: [new webpack.DefinePlugin(envVariables), new CleanWebpackPlugin(), ...htmlWebpackPluginsPages],
+}
+}

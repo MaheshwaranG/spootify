@@ -2,7 +2,7 @@ const theme: {[key:string]: any } = {
     "name": "my theme",
     "rounding": 4,
     "spacing": 24,
-    "defaultMode": "dark",
+    "defaultMode": "light",
     "global": {
       "colors": {
         "brand": {

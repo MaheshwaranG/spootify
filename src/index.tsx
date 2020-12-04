@@ -19,7 +19,7 @@ const store = configureStore();
 // };
 
 ReactDOM.render(
-  <Grommet theme={theme}>
+  <Grommet theme={theme} className="full">
     <Provider store={store}>
       <App />
     </Provider>

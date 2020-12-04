@@ -3,22 +3,27 @@ import {ActionIF} from "./action"
 export interface SystemStateIF {
     loggedIn: boolean;
     accessToken: string | undefined;
-    locale ?: string | undefined,
+    country ?: string | undefined,
     timezone ?: string | undefined,
-    user :  UserStateIF | undefined
+    user :  UserStateIF | undefined,
+    stateChanged : boolean
 }
 
 export interface UserStateIF {
     userName: string,
     email: string,
-    userId: string
+    userId: string,
+    images ?: Array<string>
 }
 
 export interface LoginActionPayloadIF {
-    accessToken: string ;
-    locale ?: string | undefined,
+    country ?: string | undefined,
     timezone ?: string | undefined,
     user :  UserStateIF
+}
+
+export interface SetTokenActionPayloadIF {
+    accessToken: string ;
 }
 
 export interface LoginActionIF extends ActionIF{

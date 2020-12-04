@@ -1,8 +1,9 @@
 import React, { useCallback } from "react";
 import { Box, Image, Button } from "grommet";
-import { logInWithSpotify } from "../../store/redux/actions/auth";
+import { logInWithSpotify } from "../../services/auth/common";
 import background from "asset/images/login/background-1.svg";
 import Spotyicon from "asset/favicons/favicon.png";
+import constants from "../../constants";
 interface PropsIF {}
 
 const Login = (props: PropsIF) => {
@@ -20,7 +21,7 @@ const Login = (props: PropsIF) => {
       <div className="center">
         <Button
           primary
-          label="Login"
+          label={constants.labels.LOGIN}
           icon={<img src={String(Spotyicon)} height={32} width={32} />}
           onClick={getSpotifyAccess}
         />

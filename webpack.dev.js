@@ -3,13 +3,7 @@ const pagesConfig = require("./pages.js");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const webpack = require("webpack");
 const dotenv= require("dotenv");
-
-const envParsed = dotenv.config().parsed;
-
-const env = Object.keys(envParsed).reduce((state, key) => {
-    state[`process.env.${key}`] = JSON.stringify(envParsed[key]);
-    return state;
-}, {})
+const fs = require('fs');
 
 let pagesList = {...pagesConfig};
 let pages = {};
@@ -80,7 +74,17 @@ console.log(
     "-------------------------------------------------------------------"
 );
 
-module.exports = {
+module.exports = (env) => {
+    const envBasePath  = path.join(__dirname+"/.env");
+    const envFile = envBasePath+"."+env.ENVIRONMENT;
+    const envFilePath = fs.existsSync(envFile) ? envFile : envBasePath;
+    const envParsed = dotenv.config({path: envFilePath}).parsed;
+
+    const envVariables = Object.keys(envParsed).reduce((state, key) => {
+        state[`process.env.${key}`] = JSON.stringify(envParsed[key]);
+        return state;
+    }, {})
+    return {
     mode: "development",
      entry: {
          ...pages
@@ -137,7 +141,7 @@ module.exports = {
          ]
      },
      plugins: [ 
-        new webpack.DefinePlugin(env), 
+        new webpack.DefinePlugin(envVariables), 
         ...htmlWebpackPluginsPages],
      devServer: {
          port: port,
@@ -155,4 +159,5 @@ module.exports = {
         //      }
         //  ]
      }
+}
 }

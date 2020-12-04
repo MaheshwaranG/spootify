@@ -5,37 +5,64 @@ import { StoreType } from "./store/redux/redux-store";
 import { connect } from "react-redux";
 import { ThunkDispatch } from "redux-thunk";
 import { AnyAction } from "redux";
-import { getToken, fetchUser, setToken } from "./store/redux/actions/auth";
+import {
+  fetchUser,
+  setAccessToken,
+} from "./store/redux/actions/auth-dispatch-creators";
+import { getToken } from "./services/auth/common";
+import constants from "./constants";
 import "./styles/main.css";
 
 interface PropsIF {
   loggedIn: boolean;
-  token: string | undefined;
-  setToken: (token: string) => any;
+  stateChanged: boolean;
+  setAccessToken: (token: string) => any;
   fetchUser: () => any;
 }
 
-interface OwnStateIF {}
+interface OwnStateIF {
+  isFetched: boolean;
+  stateChanged: boolean;
+}
 
 class App extends Component<PropsIF, OwnStateIF> {
   constructor(props: PropsIF) {
     super(props);
+    this.state = {
+      isFetched: false,
+      stateChanged: false,
+    };
   }
 
-  componentDidMount() {
-    const token: string = getToken();
-    if (!!token) {
-      // this.setState({ token: token });
-      this.props.setToken(token);
-      this.props.fetchUser();
+  static getDerivedStateFromProps(props: PropsIF, state: OwnStateIF) {
+    if (props.stateChanged != state.stateChanged) {
+      return {
+        isFetched: true,
+        stateChanged: props.stateChanged,
+      };
     }
+    if (!state.isFetched) {
+      const token: string =
+        localStorage.getItem(constants.ACCESS_TOKEN_NAME) || getToken();
+      if (!!token) {
+        props.setAccessToken(token);
+        props.fetchUser();
+      } else {
+        return {
+          isFetched: true,
+        };
+      }
+    }
+    return null;
   }
 
   render() {
     return (
-      <div>
-        <ScreenRouter loggedIn={this.props.loggedIn} />
-      </div>
+      <>
+        {this.state.isFetched ? (
+          <ScreenRouter loggedIn={this.props.loggedIn} />
+        ) : null}
+      </>
     );
   }
 }
@@ -43,14 +70,15 @@ class App extends Component<PropsIF, OwnStateIF> {
 const mapStateToProps = (state: StoreType) => {
   return {
     loggedIn: state.auth.loggedIn,
-    token: state.auth.accessToken,
+    stateChanged: state.auth.stateChanged,
   };
 };
 
-const mapDispatchToProps = (dispatch: ThunkDispatch<any, any, any>) => {
+const mapDispatchToProps = (dispatch: ThunkDispatch<any, any, AnyAction>) => {
   return {
     fetchUser: () => dispatch(fetchUser()),
-    setToken: (token: string) => dispatch(setToken(token)),
+    setAccessToken: (accessToken: string) =>
+      dispatch(setAccessToken(accessToken)),
   };
 };
 
